@@ -452,6 +452,25 @@ ggplot(Plot_Data) +
 <pre class="r"><code>Datahotel1=Data_hotels %&gt;% filter(Value != 0)
 
 Clean_data=na.omit(spread(Datahotel1, Variable, Value, fill = NA, convert = FALSE))</code></pre>
+<p>I find the correlations per Region</p>
+<pre class="r"><code>Clean_data %&gt;%
+  filter(Date &gt;= &quot;2010-01-01&quot; &amp; Date &lt;= &quot;2019-07-01&quot;) %&gt;%
+  group_by(Region) %&gt;%
+  summarize(COR=cor(`Price per room`, `Rooms percentage capacity utilization`))</code></pre>
+<pre><code>## # A tibble: 22 x 2
+##    Region                    COR
+##    &lt;chr&gt;                   &lt;dbl&gt;
+##  1 Akershus                0.189
+##  2 Aust-Agder              0.492
+##  3 Buskerud               -0.203
+##  4 Finnmark - Finnmárku    0.269
+##  5 Hedmark                 0.379
+##  6 Hele landet             0.189
+##  7 Hordaland               0.659
+##  8 Møre og Romsdal         0.629
+##  9 Nord-Trøndelag (-2017)  0.216
+## 10 Nordland                0.320
+## # ... with 12 more rows</code></pre>
 
 
 

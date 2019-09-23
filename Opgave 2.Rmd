@@ -189,7 +189,14 @@ Clean_data=na.omit(spread(Datahotel1, Variable, Value, fill = NA, convert = FALS
 
 ```
 
+I find the correlations per Region
 
+```{r}
+Clean_data %>%
+  filter(Date >= "2010-01-01" & Date <= "2019-07-01") %>%
+  group_by(Region) %>%
+  summarize(COR=cor(`Price per room`, `Rooms percentage capacity utilization`))
+```
 
 
 
