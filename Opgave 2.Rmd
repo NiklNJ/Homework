@@ -1,0 +1,198 @@
+---
+title: "Aflevering mandag 23. september"
+author: "Niklas Jespersen"
+date: "21/9/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, include=FALSE}
+library(colorspace)
+library(tidyverse)
+library(dplyr)
+library(httr)
+library(rjstat)
+library(conflicted)
+library(ggplot2)
+library(zoo)
+
+```
+
+
+```{r}
+conflict_prefer("filter", "dplyr")
+```
+
+
+Saving the links as to varibles, link76 and link74
+
+```{r}
+link76="http://data.ssb.no/api/v0/dataset/95276.json?lang=no"
+link74="http://data.ssb.no/api/v0/dataset/95274.json?lang=no"
+
+```
+
+
+
+```{r}
+d.temp = GET(link76)
+
+Tabel1 = fromJSONstat(content(d.temp, "text"))
+
+Tabl_76= Tabel1[[1]]
+```
+
+
+```{r}
+d.temp2 = GET(link74)
+
+Tabel2 = fromJSONstat(content(d.temp2, "text"))
+
+Tabl_74= Tabel2[[1]]
+```
+
+
+
+
+Merging the two dataframes together with merge
+
+```{r}
+Data_hotels = rbind(Tabl_74, Tabl_76)
+
+```
+
+Renaming all the varible names to english
+Renaming all row names
+
+```{r}
+Data_hotels = rename(Data_hotels, "Region"="region")
+
+Data_hotels = rename(Data_hotels, "Date"="måned")
+
+Data_hotels = rename(Data_hotels, "Variable"="statistikkvariabel")
+
+Data_hotels = rename(Data_hotels, "Value"="value")
+
+
+
+Data_hotels$Date = as.Date(as.yearmon(Data_hotels$Date, "%YM%m"))
+
+
+
+Data_hotels$Variable <- recode(Data_hotels$Variable, "Kapasitetsutnytting av senger (prosent)" = "Beds percentage capacity utilization", "Kapasitetsutnytting av rom (prosent)" = 	
+
+"Rooms percentage capacity utilization", "Pris per rom (kr)" = "Price per room")
+```
+
+Filtering out data with the price 
+
+```{r}
+Price_DATA=Data_hotels %>% filter(Value != 0) %>% filter(Variable=="Price per room")
+
+```
+
+
+I caluculate the Region average
+
+```{r}
+Region_average = Price_DATA %>% group_by(Region) %>% summarize(average_price=mean(Value))
+```
+
+
+
+I calculate the averege of "Hele landet"
+
+```{r}
+hele_landet = Price_DATA %>% filter(Region == "Hele landet")
+```
+
+```{r}
+Mean_hele_landet = mean(hele_landet$Value)
+```
+
+
+I find the difference between the county average room price and the national average room price per month
+
+
+```{r}
+Dif_meanRoomPrice = Price_DATA %>% group_by(Region) %>% summarize(average_price=mean(Value)-Mean_hele_landet)
+
+```
+
+
+I find find the amount the region with the higest average price compared to the national average.
+
+```{r}
+L = Dif_meanRoomPrice$average_price == max(Dif_meanRoomPrice$average_price)
+
+paste( "The higest average price compared to the national average is", Dif_meanRoomPrice[L,]$average_price, "and the region is", Dif_meanRoomPrice[L,]$Region)
+
+```
+
+
+I find find the amount the region with the lowest average price compared to the national average.
+
+```{r}
+M <- Dif_meanRoomPrice$average_price == min(Dif_meanRoomPrice$average_price)
+
+paste( "The lowest average price compared to the national average is", Dif_meanRoomPrice[M,]$average_price, "and the region is", Dif_meanRoomPrice[M,]$Region)
+```
+
+
+##Do the calculations above per county and per year. Identify the year and county with the highest positive and negative difference.
+
+
+```{r}
+Average_Price_By_Year_Region= Price_DATA %>% group_by(lubridate::year(Date), Region) %>% summarize(average_price_year=mean(Value))
+
+
+p = Average_Price_By_Year_Region$average_price_year == max(Average_Price_By_Year_Region$average_price_year)
+
+paste( "The higest average price is", Average_Price_By_Year_Region[p,]$average_price_year, "and the region is", Average_Price_By_Year_Region[p,]$Region, "in year", Average_Price_By_Year_Region[p,]$`lubridate::year(Date)` )
+
+d = Average_Price_By_Year_Region$average_price_year == min(Average_Price_By_Year_Region$average_price_year)
+
+paste( "The lowest average price is", Average_Price_By_Year_Region[d,]$average_price_year, "and the region is", Average_Price_By_Year_Region[d,]$Region, "in year", Average_Price_By_Year_Region[d,]$`lubridate::year(Date)` )
+
+
+```
+
+Make a plot of the monthly price difference for Troms county from 1999 until today.
+
+
+```{r}
+Plot_Data= Price_DATA %>% filter(Region=="Troms - Romsa", Date >= "1999-01-01" & Date <= "2019-07-01")
+
+ggplot(Plot_Data) +
+  geom_point(aes(x = Date, y = Value)) +
+  labs(
+    x = "Date of the year",
+    y = "Price in Troms",
+    title = "Over time the price in Troms has increased",
+    subtitle = "Prices in Troms from 1999 to 2019",
+    caption = "Assignment 2")
+```
+
+
+Per county, is there any relationship (correlation) between room capacity and price since January 2010?
+
+I tidy up my data
+
+```{r}
+Datahotel1=Data_hotels %>% filter(Value != 0)
+
+Clean_data=na.omit(spread(Datahotel1, Variable, Value, fill = NA, convert = FALSE))
+
+```
+
+
+
+
+
+
+
+
