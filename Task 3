@@ -1,0 +1,150 @@
+---
+title: "Babies"
+author: "Niklas Jespersen"
+date: "23/10/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(rvest)
+library(colorspace)
+library(tidyverse)
+library(dplyr)
+library(httr)
+library(rjstat)
+library(conflicted)
+library(ggplot2)
+library(zoo)
+library(readr)
+conflict_prefer("filter", "dplyr")
+```
+
+```{r}
+setwd("C:/Users/Niklas Jespersen/Documents/Uni/Data science/Projekter")
+getwd()
+```
+
+
+```{r}
+data<-read.fwf("Nat2017PublicUS.c20180516.r20180808.txt",
+         widths= c(-8,4,2,-4,4,1,-451,1,-28,4),
+         col.names=c("Birth Year","Birth Month","Time of Birth","Birth Day of Week","Sex of Infant","Birth Weight"),
+         strip.white=FALSE)
+```
+
+```{r}
+data18<-read.fwf("Nat2018PublicUS.c20190509.r20190717.txt",
+         widths= c(-8,4,2,-4,4,1,-451,1,-28,4),
+         col.names=c("Birth Year","Birth Month","Time of Birth","Birth Day of Week","Sex of Infant","Birth Weight"),
+         strip.white=FALSE)
+```
+
+
+What is the proportion of boys and girls? 
+In 2017 it was
+
+```{r}
+Sex17<-data %>% count(Sex.of.Infant)
+
+Sex17[2,2]/Sex17[1,2]
+
+```
+
+There is 4,8 procent more boys than girls born in 2017
+
+In 2018 it was
+
+```{r}
+Sex18<-data18 %>% count(Sex.of.Infant)
+
+Sex18[2,2]/Sex18[1,2]
+```
+
+There is 4,6 percent more boys than girls in 2018
+
+That is a chance of 0,2 percent points between 2017 and 2018
+
+The average birthweight in 2017 and 2018 was
+
+```{r}
+mean(data$Birth.Weight)
+mean(data18$Birth.Weight)
+```
+
+
+
+Make a dencity plot
+
+```{r}
+data18 %>% ggplot(aes(x=Birth.Weight, fill=Sex.of.Infant) ) +
+                    geom_density(col = NA, alpha=0.5
+                                 )
+```
+
+
+As we see on the plot, the the boys are more heavy then the girls. But the spread distribution of the boys' weight is higher. 
+
+The mean for the boys are higher
+
+```{r}
+data18 %>% group_by(Sex.of.Infant) %>% summarise(mean_weight=mean(Birth.Weight))
+```
+
+The varians of the boys are heigher
+
+```{r}
+data18 %>% group_by(Sex.of.Infant) %>% summarise(variance_weight=var(Birth.Weight))
+```
+
+
+Does the average birth weight vary by month and year?
+
+
+
+```{r}
+month_2017 <- data %>% group_by(Birth.Month) %>% summarise(month17_mean=mean(Birth.Weight))
+month_2018 <- data18 %>% group_by(Birth.Month) %>% summarise(month18_mean=mean(Birth.Weight))
+```
+
+
+```{r}
+
+Data3 <- cbind(month_2017,month_2018[,2])
+
+
+
+Data3 %>% mutate(.,month=Birth.Month*2)
+
+mymonths <- c("Jan","Feb","Mar",
+              "Apr","May","Jun",
+              "Jul","Aug","Sep",
+              "Oct","Nov","Dec")
+
+Data3$Birth.Month <- mymonths[ Data3$Birth.Month ]
+
+as.Date(Data3$Birth.Month, %B)
+
+
+```
+
+```{r}
+Data3 %>% ggplot( aes(x=Birth.Month, y=month17_mean), title="2017")+
+  geom_col()+
+  coord_cartesian(xlim = c(0, 13), ylim = c(3250, 3280)) 
+   
+```
+
+As we see on the plot, the average birthweight is higher in the summermonths than winter in 2017
+
+```{r}
+Data3 %>% ggplot( aes(x=Birth.Month, y=month18_mean))+
+  geom_col()+
+  coord_cartesian(xlim = c(0, 13), ylim = c(3250, 3280)) 
+```
+
+
+The same in 2018 but with august as the most heavy month
