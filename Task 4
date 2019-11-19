@@ -1,0 +1,179 @@
+title: "Task4"
+author: "Niklas Jespersen"
+date: "18/11/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+getwd()
+setwd("C:/Users/Niklas Jespersen/Documents/Uni/Data science/Projekter/Task 4")
+data<-read.csv("storedata.csv")
+```
+
+
+```{r include=FALSE}
+library(purrr)
+library(tidyverse)
+library(anchors)
+library(stringr)
+library(rlang)
+library(dplyr)
+library(lubridate)
+```
+
+
+```{r include=FALSE}
+str(data)
+```
+
+
+
+
+# Task 4
+
+### 1)
+
+1: For the last 3 months of 2017, calculate the total Sales by month, for Region 1 and Region 9 in the Customer_Segment, Corporate and Consumer. 
+
+This output is Table 1.
+
+```{r include=FALSE}
+data$Order_Date <- ymd(data$Order_Date)
+
+str(data)
+summary(data)
+```
+
+
+
+
+```{r include=FALSE}
+Table_1 <- data %>% filter(Order_Date > "2017-09-30") %>% filter(Region == c("Region 1", "Region 9")) %>% filter(Customer_Segment== c("Corporate", "Consumer")) %>% group_by(month(Order_Date)) %>% summarise(total_sales = sum(Sales))
+```
+
+
+```{r, include=FALSE}
+colnames(Table_1) <- c("month", "total_sales")
+```
+
+```{r echo=FALSE}
+Table_1
+```
+
+
+
+### 2
+
+2: Make a plot of the monthly total Sales in Region 1 and Region 13 in 2015, 2016 and 2017. This output is Figure 1.
+
+```{r include=FALSE}
+s <- data
+day(s$Order_Date) <- 1
+```
+
+
+```{r include=FALSE}
+a <- s %>% filter(Region == c("Region 1", "Region 13")) %>% filter(year(Order_Date) == c("2015", "2016", "2017")) %>% group_by(Region, Order_Date)  %>% summarise(Total_sales = sum(Sales)) %>% ggplot(aes(x=Order_Date, y = Total_sales, color=Region))+
+  geom_col(position = "dodge")+
+  labs(x = "months", y = "Sales", subtitle = "Total sales in Region 1 and Region 13 in 2015 between 2017 per month", title = "Figure 1")
+```
+
+```{r echo=FALSE}
+a
+```
+
+
+### 3
+
+3: In Figure 1, identify the months where the total Sales in Region 13 is greater than the total Sales in Region 1. This output is Table 2.
+
+```{r include=FALSE}
+b <-s %>% filter(Region == c("Region 1", "Region 13")) %>% filter(year(Order_Date) == c("2015", "2016", "2017")) %>% group_by(Region, Order_Date)  %>% summarise(Total_sales = sum(Sales))
+```
+
+```{r include=FALSE}
+c <- spread(b, Region, Total_sales)
+c <- c %>% drop_na()
+c$Order_Date
+```
+
+
+```{r include=FALSE}
+placement <- c$`Region 13`>c$`Region 1`
+```
+
+
+
+```{r include=FALSE}
+d <- as.numeric(c$Order_Date)*placement
+d <- as.data.frame(d)
+d <- d %>% filter(d > 0)
+d <- as_date(d$d)
+```
+
+
+```{r echo=FALSE}
+as.data.frame(table_2 <- d)
+```
+
+
+### 4
+
+
+4: Find average Profit per Customer_Segment and Product_Category in 2017, for all regions except Region 3, 5 and 8. What segment produced the highest average profit?
+
+```{r include=FALSE}
+s <- data %>% filter(Order_Date >= "2017-01-01") %>% filter(Region!="Region 3") %>% filter(Region != "Region 5") %>% filter(Region != "Region 8") %>% group_by(Customer_Segment, Product_Category) %>% summarise(ave_profit = mean(Profit))
+```
+
+```{r echo=FALSE}
+table3 <- s %>% filter(ave_profit == max(ave_profit))
+```
+
+
+
+### 5
+
+
+The final task is quite challenging!
+
+
+
+5: You are asked to estimate a SARIMA model on the aggregated monthly Order_Quantity in the Customer_Segment; Small Business and Product_Category; Office Supplies. The SARIMA model contains the following parameters:
+p - AR order
+d - difference order
+q - MA order
+P - SAR order
+D - seasonal difference
+Q - SMA order
+S - seasonal period (12 months in these data)
+Iterate p and q over 0,1,2,3,4, d over 0,1, P and Q over 0,1,2,3,4, D over 0,1, and keep S fixed at 12. This gives a total of 2500 models. Estimate these models on the monthly data from 2014 through 2016, and identify the best SARIMA model on a holdout sample from 2017, based on the smallest RMSE (Root Mean Square Error). Produce a plot of the whole time series, and add onto it the 2017 forecast from the best SARIMA model, together with the actual aggregated monthly Order_Quantity. This output is Figure 2. Specify what was the best SARIMA model on the plot.
+An estimator on the SARIMA model is found in the R forecast package. A guide to estimation is found here.
+The data science process here is:
+Data (2014-2016)  ⇒ 
+Model (2500) ⇒ 
+forecast (for 2017) ⇒ 
+arrange RMSE (forecast, actual) ⇒ Best model!
+
+
+
+```{r include=FALSE}
+library(forecast)
+```
+
+```{r include=FALSE}
+sample <- sample_n(data, 200)
+```
+
+
+```{r}
+sample <- sample %>% filter(Order_Date > "2014-01-01" & Order_Date < "2017-01-01", Customer_Segment == "Consumer", Product_Category == "Office Supplies")
+```
+
+# I have no idea how to make this model... 
